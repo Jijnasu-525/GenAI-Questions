@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GenAI TPRM Scope Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F0F2F7;
+    --surface: #FFFFFF;
+    --surface2: #EDF0F6;
+    --border: #D8DCE8;
+    --border2: #C2C8D8;
+    --text: #1C2235;
+    --text2: #4A5270;
+    --text3: #8A91AA;
+    --accent: #2B5BE0;
+    --accent-dim: rgba(43,91,224,0.08);
+    --accent-glow: rgba(43,91,224,0.20);
+    --warn: #D97A12;
+    --warn-dim: rgba(217,122,18,0.10);
+    --sidebar-bg: #1E2540;
+    --sidebar-text: #C8CEDF;
+    --sidebar-text2: #7B84A0;
+    --sidebar-border: #2D3558;
+    --sidebar-active-bg: rgba(43,91,224,0.18);
+    --sidebar-active-border: #4B7BFF;
+    --sidebar-active-text: #A3BFFF;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    position: relative;
+    padding: 3rem 2.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 380px; height: 380px;
+    background: radial-gradient(circle, rgba(43,91,224,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .header-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 20px; height: 1px;
+    background: var(--accent);
+  }
+  .header-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    line-height: 1.1;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+  .header-title em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  .header-sub {
+    font-size: 14px;
+    color: var(--text2);
+    max-width: 540px;
+    line-height: 1.6;
+  }
+
+  /* MAIN LAYOUT */
+  .main {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: calc(100vh - 160px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    border-right: 1px solid var(--sidebar-border);
+    padding: 1.75rem 1.25rem;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--sidebar-bg);
+  }
+  .sidebar-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--sidebar-text2);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+  .scope-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 2rem;
+  }
+  .scope-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--sidebar-text);
+    text-align: left;
+    transition: all 0.18s ease;
+    width: 100%;
+  }
+  .scope-btn:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: var(--sidebar-border);
+    color: #E8EDFF;
+  }
+  .scope-btn.active {
+    background: var(--sidebar-active-bg);
+    border-color: var(--sidebar-active-border);
+    color: var(--sidebar-active-text);
+  }
+  .scope-emoji {
+    font-size: 16px;
+    width: 22px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .scope-info { flex: 1; min-width: 0; }
+  .scope-name { font-size: 13px; font-weight: 600; display: block; line-height: 1.2; }
+  .scope-desc { font-size: 11px; opacity: 0.6; display: block; margin-top: 2px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .scope-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid var(--sidebar-border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: var(--sidebar-text2);
+    flex-shrink: 0;
+  }
+  .scope-btn.active .scope-count {
+    background: rgba(75,123,255,0.20);
+    border-color: var(--sidebar-active-border);
+    color: var(--sidebar-active-text);
+  }
+
+  .risk-legend { margin-top: 1.5rem; }
+  .risk-legend-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--sidebar-text2);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  .risk-dot-row {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .risk-dot {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 10px; color: var(--sidebar-text2);
+    cursor: pointer;
+    padding: 3px 6px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+  .risk-dot:hover { color: var(--sidebar-text); border-color: var(--sidebar-border); }
+  .risk-dot.active-risk { color: #E8EDFF; border-color: var(--sidebar-border); background: rgba(255,255,255,0.08); }
+  .risk-dot-circle { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+  /* CONTENT AREA */
+  .content {
+    padding: 1.75rem 2rem;
+    min-width: 0;
+  }
+
+  /* STATUS BAR */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .status-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text3);
+  }
+  .status-count strong {
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .search-wrap {
+    position: relative;
+  }
+  .search-input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 12px 7px 32px;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    color: var(--text);
+    width: 200px;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+  .search-input:focus { border-color: var(--border2); }
+  .search-input::placeholder { color: var(--text3); }
+  .search-icon {
+    position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+    color: var(--text3); font-size: 12px; pointer-events: none;
+  }
+
+  /* SECTION HEADER */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 2rem 0 0.85rem;
+  }
+  .section-header:first-of-type { margin-top: 0; }
+  .section-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid var(--accent-glow);
+    padding: 3px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .section-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* QUESTION CARD */
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.15s;
+    animation: fadeUp 0.3s ease both;
+  }
+  .q-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-1px);
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .q-card-top {
+    padding: 1rem 1.1rem 0.75rem;
+  }
+  .q-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 0.7rem;
+  }
+  .scope-pill {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid var(--accent-glow);
+    letter-spacing: 0.03em;
+  }
+  .risk-pill {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid;
+    letter-spacing: 0.02em;
+  }
+  .q-text {
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--text);
+    font-weight: 500;
+    margin-bottom: 0;
+  }
+  .q-card-bottom {
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .q-detail {
+    padding: 0.75rem 1.1rem;
+  }
+  .q-detail + .q-detail {
+    border-left: 1px solid var(--border);
+  }
+  .q-detail-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .q-detail-label-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+  }
+  .q-detail-text {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.55;
+  }
+
+  /* EXPAND TOGGLE */
+  .q-expand-btn {
+    width: 100%;
+    background: none;
+    border: none;
+    border-top: 1px solid var(--border);
+    padding: 7px 1.1rem;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .q-expand-btn:hover { background: var(--surface2); color: var(--text2); }
+  .q-expand-btn .chevron { transition: transform 0.2s; }
+  .q-expand-btn.open .chevron { transform: rotate(180deg); }
+  .q-card-bottom { display: none; }
+  .q-card.expanded .q-card-bottom { display: grid; }
+  .q-card.expanded .q-expand-btn { color: var(--text2); background: var(--surface2); }
+
+  /* EMPTY */
+  .empty {
+    text-align: center;
+    padding: 5rem 2rem;
+    color: var(--text3);
+  }
+  .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+  .empty-msg { font-size: 15px; margin-bottom: 0.4rem; }
+  .empty-hint { font-size: 12px; color: var(--text3); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  @media (max-width: 768px) {
+    .main { grid-template-columns: 1fr; }
+    .sidebar { position: relative; height: auto; border-right: none; border-bottom: 1px solid var(--sidebar-border); }
+    .scope-list { flex-direction: row; flex-wrap: wrap; }
+    .scope-btn { width: auto; flex: 1; min-width: 120px; }
+    .q-card-bottom { grid-template-columns: 1fr; }
+    .q-detail + .q-detail { border-left: none; border-top: 1px solid var(--border); }
+    .header { padding: 2rem 1.25rem 1.5rem; }
+    .content { padding: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-eyebrow">Third-Party Risk Management</div>
+  <h1 class="header-title">GenAI <em>Scope</em> Assessment</h1>
+  <p class="header-sub">Filter assessment questions by AI deployment scope. Each question maps to relevant risks and provides evaluation guidance.</p>
+</div>
+
+<div class="main">
+  <aside class="sidebar">
+    <div class="sidebar-label">AI Scope</div>
+    <div class="scope-list" id="scope-list"></div>
+    <div class="risk-legend">
+      <div class="risk-legend-title">Risk Filter</div>
+      <div class="risk-dot-row" id="risk-legend"></div>
+    </div>
+  </aside>
+
+  <div class="content">
+    <div class="status-bar">
+      <div class="status-count" id="status-count"></div>
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input class="search-input" type="text" placeholder="Search questions…" id="search-input" oninput="renderQuestions()">
+      </div>
+    </div>
+    <div id="q-area"></div>
+  </div>
+</div>
+
+<script>
+const scopes = [
+  { id: "all",         label: "All Scopes",    emoji: "🔍", desc: "Show everything" },
+  { id: "consumer",    label: "Consumer AI",   emoji: "👤", desc: "ChatGPT, Gemini, etc." },
+  { id: "enterprise",  label: "Enterprise AI", emoji: "🏢", desc: "Org-deployed platforms" },
+  { id: "pretrained",  label: "Pretrained",    emoji: "📦", desc: "Third-party base models" },
+  { id: "finetuned",   label: "Fine-tuned",    emoji: "🎛️", desc: "Org-customised models" },
+  { id: "selftrained", label: "Self-trained",  emoji: "🔬", desc: "Built from scratch" },
+];
+
+const questions = [
+  { section:"2.1 GenAI Use Case Discovery & Accountability", risks:["Data Leakage","Shadow AI","IP Exposure"], scopes:["consumer","enterprise","pretrained","finetuned","selftrained"], text:"What business functions and roles are authorized to use GenAI, and for what approved use cases?", objective:"Establish visibility into who uses AI and for what purpose across the organization.", expects:"A list of authorized departments/roles, documented use cases, and an approval record or policy." },
+  { section:"2.1 GenAI Use Case Discovery & Accountability", risks:["Shadow AI"], scopes:["consumer","enterprise"], text:"Is there a centralized inventory of approved GenAI tools, vendors, and use cases?", objective:"Identify whether the organization has a living registry to manage its AI footprint.", expects:"An up-to-date register of all sanctioned GenAI tools with vendor names, use case descriptions, and owners." },
+  { section:"2.1 GenAI Use Case Discovery & Accountability", risks:["Data Leakage","IP Exposure"], scopes:["consumer","enterprise","finetuned"], text:"Are GenAI use cases formally risk-tiered (e.g., internal productivity vs. customer-facing or decision-making)?", objective:"Determine if higher-risk AI deployments receive proportionally stronger controls.", expects:"A tiering framework (e.g., Low/Medium/High) with examples mapped to each tier and corresponding control requirements." },
+  { section:"2.1 GenAI Use Case Discovery & Accountability", risks:["Shadow AI"], scopes:["enterprise","finetuned","selftrained"], text:"Is a named business owner accountable for each GenAI use case?", objective:"Ensure clear human accountability exists for every AI use case in production.", expects:"Named individuals listed as business owners per use case in an inventory, with defined responsibilities." },
+  { section:"2.2 Approval, Usage & Shadow AI Controls", risks:["Shadow AI","Data Leakage"], scopes:["consumer","enterprise"], text:"Is there a formal approval process for onboarding new GenAI tools or use cases?", objective:"Verify that new AI adoption is governed through a structured review — not ad hoc.", expects:"A documented onboarding process, approval workflow (e.g., security review checklist, sign-off from IT/Legal)." },
+  { section:"2.2 Approval, Usage & Shadow AI Controls", risks:["Shadow AI","Prompt Injection"], scopes:["consumer","enterprise"], text:"Are acceptable and prohibited uses of GenAI documented and enforced?", objective:"Assess whether employees have clear guidance on what they may and may not do with AI.", expects:"An acceptable use policy (AUP) for GenAI, evidence of communication to staff, and enforcement mechanisms." },
+  { section:"2.2 Approval, Usage & Shadow AI Controls", risks:["Shadow AI","Data Leakage"], scopes:["enterprise"], text:"What technical or monitoring controls are used to detect and manage unauthorized GenAI usage?", objective:"Determine if the organization can detect shadow AI in real-time or near-real-time.", expects:"CASB, DLP, browser extension policies, or network-level controls with evidence of active monitoring." },
+  { section:"2.2 Approval, Usage & Shadow AI Controls", risks:["Shadow AI"], scopes:["consumer","enterprise"], text:"How are employees provided with approved GenAI alternatives to reduce shadow AI adoption?", objective:"Understand if the organization proactively reduces shadow AI risk through enablement.", expects:"A list of sanctioned tools promoted to employees, communications/training on approved alternatives." },
+  { section:"3.1 Data Classification, Handling & Leakage Prevention", risks:["Data Privacy","Confidentiality","Data Leakage"], scopes:["consumer","enterprise","pretrained","finetuned"], text:"What data classifications are permitted for GenAI inputs and outputs?", objective:"Establish whether data sensitivity levels are respected when using AI tools.", expects:"A data handling policy specifying which data classifications (e.g., Public, Internal, Confidential, Restricted) are allowed in each GenAI tier." },
+  { section:"3.1 Data Classification, Handling & Leakage Prevention", risks:["Data Privacy","Data Leakage"], scopes:["consumer","enterprise","pretrained","finetuned","selftrained"], text:"How is sensitive data (PII, IP, confidential business data) prevented from being submitted or exposed through GenAI?", objective:"Verify technical and procedural controls exist to prevent inadvertent data exposure.", expects:"DLP controls, prompt guardrails, masking/anonymization techniques, or contractual prohibitions." },
+  { section:"3.1 Data Classification, Handling & Leakage Prevention", risks:["Data Leakage"], scopes:["enterprise","finetuned","selftrained"], text:"Are GenAI inputs and outputs logged, monitored, or inspected for data leakage?", objective:"Assess whether audit trails exist for GenAI interactions involving sensitive data.", expects:"Logging architecture, retention periods, alerting rules, and review processes for AI-related data flows." },
+  { section:"3.2 Training Data Usage, Retention & Residency", risks:["Data Breach at AI Provider","IP Infringement"], scopes:["consumer","enterprise","pretrained"], text:"Does the provider use customer data for model training or fine-tuning, and can this be contractually disabled?", objective:"Identify IP and privacy risks from data being absorbed into the provider's model.", expects:"Contract clauses (DPA, ToS) explicitly addressing training data opt-out, with evidence of opt-out configuration." },
+  { section:"3.2 Training Data Usage, Retention & Residency", risks:["Data Breach at AI Provider"], scopes:["consumer","enterprise","pretrained","finetuned"], text:"What are the data retention, deletion, and geographic residency controls for GenAI inputs and outputs?", objective:"Ensure data lifecycle and sovereignty requirements are met by the provider.", expects:"Documented retention periods, deletion procedures, data residency options (e.g., EU-only), and contractual guarantees." },
+  { section:"4.1 Prompt Injection & Output Manipulation", risks:["Prompt Injection","Hallucinations"], scopes:["enterprise","pretrained","finetuned","selftrained"], text:"What controls prevent prompt injection, indirect prompt injection, or system prompt override?", objective:"Assess whether the AI deployment is hardened against adversarial prompt attacks.", expects:"Input validation, system prompt isolation, sandboxed contexts, content filtering, red team results." },
+  { section:"4.1 Prompt Injection & Output Manipulation", risks:["Prompt Injection","Hallucinations"], scopes:["enterprise","finetuned","selftrained"], text:"How are GenAI outputs validated or constrained for high-risk or decision-impacting use cases?", objective:"Ensure AI-generated decisions or recommendations are subject to appropriate review and validation.", expects:"Human-in-the-loop controls, output confidence thresholds, downstream validation logic, or rejection criteria." },
+  { section:"4.2 Sandboxing, SSRF & Environment Isolation", risks:["Inadequate Sandboxing","SSRF"], scopes:["enterprise","finetuned","selftrained"], text:"How are GenAI models, plugins, tools, or agents sandboxed to prevent unauthorized system or network access?", objective:"Verify that AI execution environments are isolated from sensitive internal systems.", expects:"Network segmentation, container isolation, egress controls, plugin allowlisting, and security architecture diagrams." },
+  { section:"4.2 Sandboxing, SSRF & Environment Isolation", risks:["SSRF"], scopes:["enterprise","finetuned","selftrained"], text:"What controls prevent GenAI from accessing internal resources or making unrestricted external calls?", objective:"Prevent AI agents or tools from being weaponized for internal reconnaissance or data exfiltration.", expects:"Firewall rules, API gateway controls, SSRF mitigations, and evidence of testing." },
+  { section:"4.3 Availability, Abuse & Threat Modeling", risks:["DoS / DDoS","Threat Actor Evolution"], scopes:["enterprise","pretrained","finetuned","selftrained"], text:"What protections exist against service abuse, denial-of-service, or resource exhaustion involving GenAI?", objective:"Ensure AI services are protected against availability attacks and cost-based abuse.", expects:"Rate limiting, quota enforcement, anomaly detection, autoscaling policies, and incident playbooks." },
+  { section:"4.3 Availability, Abuse & Threat Modeling", risks:["Threat Actor Evolution"], scopes:["enterprise","finetuned","selftrained"], text:"Has GenAI-specific threat modeling been conducted and periodically updated to reflect emerging attack techniques?", objective:"Verify that AI-specific threats (e.g., adversarial prompts, model inversion) are actively modeled.", expects:"Threat model documentation, MITRE ATLAS or equivalent mapping, review cadence, and owner." },
+  { section:"5.1 Training Integrity & Data Poisoning", risks:["Data Poisoning"], scopes:["finetuned","selftrained"], text:"How is training or fine-tuning data validated to prevent poisoning or malicious influence?", objective:"Ensure the integrity of training pipelines to prevent adversarial corruption of model behavior.", expects:"Data provenance controls, validation scripts, anomaly detection in training sets, access controls on training data." },
+  { section:"5.1 Training Integrity & Data Poisoning", risks:["Data Poisoning"], scopes:["finetuned","selftrained"], text:"How is model drift, integrity, and version control monitored over time?", objective:"Detect degradation or unexpected behavioral changes in deployed models over their lifecycle.", expects:"Model versioning strategy, drift detection metrics, rollback procedures, and monitoring dashboards." },
+  { section:"5.2 Hallucination, Bias & Ethical Risk Management", risks:["Hallucinations","Model Bias & Ethical Risks"], scopes:["consumer","enterprise","pretrained","finetuned","selftrained"], text:"What measures are in place to detect, limit, or mitigate hallucinated, biased, or misleading outputs?", objective:"Assess the organization's controls for ensuring AI outputs are accurate and trustworthy.", expects:"Output review processes, hallucination testing results, content filters, human oversight for critical outputs." },
+  { section:"5.2 Hallucination, Bias & Ethical Risk Management", risks:["Model Bias & Ethical Risks"], scopes:["enterprise","finetuned","selftrained"], text:"Are fairness, bias testing, and ethical considerations formally assessed for material GenAI use cases?", objective:"Ensure high-impact AI use cases are subject to ethical risk review.", expects:"Bias audit reports, demographic testing results, ethics review process, responsible AI framework documentation." },
+  { section:"6.1 Provider Security & Supply Chain Risk", risks:["Data Breach at AI Provider","Supply Chain Risk"], scopes:["consumer","enterprise","pretrained"], text:"What independent security assurances does the provider maintain (e.g., SOC 2, ISO 27001)?", objective:"Verify that the provider meets baseline security standards through third-party assurance.", expects:"Current SOC 2 Type II report, ISO 27001 certificate, or equivalent with scope covering AI services." },
+  { section:"6.1 Provider Security & Supply Chain Risk", risks:["Supply Chain Risk"], scopes:["consumer","enterprise","pretrained"], text:"Are sub-processors disclosed, risk-assessed, and contractually bound to equivalent security obligations?", objective:"Identify and manage downstream supply chain risk introduced by the provider's own third parties.", expects:"Sub-processor list, risk assessments or assurance reports for key sub-processors, DPA flow-down clauses." },
+  { section:"6.2 Incident Response & Resilience", risks:["Data Breach","Operational Risk"], scopes:["consumer","enterprise","pretrained"], text:"What are the provider's incident response capabilities, notification timelines, and customer support commitments?", objective:"Assess readiness for breach scenarios and whether regulatory notification windows can be met.", expects:"Provider IR policy, SLA for breach notification (e.g., 72-hour), dedicated security contact, historical incident record." },
+  { section:"6.2 Incident Response & Resilience", risks:["Data Breach","Operational Risk"], scopes:["enterprise","pretrained","finetuned"], text:"How does the provider support forensic investigation and service continuity during incidents?", objective:"Ensure the organization can investigate incidents and maintain operations during a disruption.", expects:"Access to logs/telemetry for forensics, BCP/DRP documentation, RTO/RPO commitments, tabletop exercise results." },
+  { section:"7.1 Copyright, IP & Ownership", risks:["Copyright & IP Infringement"], scopes:["consumer","enterprise","pretrained"], text:"Who owns GenAI-generated outputs, and what indemnification is provided for IP infringement claims?", objective:"Clarify legal ownership and liability exposure for AI-generated content used commercially.", expects:"Contract terms addressing output ownership, IP indemnity clauses (e.g., similar to OpenAI/Microsoft IP coverage)." },
+  { section:"7.1 Copyright, IP & Ownership", risks:["Copyright & IP Infringement"], scopes:["pretrained","finetuned","selftrained"], text:"Are training datasets sourced and used in compliance with applicable IP and copyright laws?", objective:"Prevent legal exposure from unlicensed use of copyrighted material in model training.", expects:"Data licensing inventory, legal review of training data sources, opt-out or takedown procedures." },
+  { section:"7.2 Regulatory & Responsible AI Compliance", risks:["Regulatory","Reputational"], scopes:["consumer","enterprise","pretrained","finetuned","selftrained"], text:"How does the GenAI service comply with applicable privacy and AI regulations?", objective:"Ensure the AI deployment does not create regulatory liability under GDPR, EU AI Act, or sector-specific rules.", expects:"Regulatory mapping document, DPIA for high-risk AI, provider compliance certifications, legal counsel sign-off." },
+  { section:"7.2 Regulatory & Responsible AI Compliance", risks:["Ethical","Reputational"], scopes:["enterprise","finetuned","selftrained"], text:"Are Responsible AI principles defined, governed, and enforced with executive accountability?", objective:"Verify that AI ethics is institutionalized — not just aspirational.", expects:"Responsible AI policy, governance committee or owner, enforcement mechanisms, annual review evidence." },
+];
+
+// Collect all unique risks
+const allRisks = [...new Set(questions.flatMap(q => q.risks))].sort();
+const riskColors = ['#C0392B','#D97A12','#1A6BBE','#7B3FA8','#2E7D5E','#B05C00','#1565A8','#8B2A6E','#1A7A6B','#A0522D','#2E5FA8','#6B4226'];
+const riskColorMap = {};
+allRisks.forEach((r, i) => riskColorMap[r] = riskColors[i % riskColors.length]);
+
+let activeScope = "all";
+let activeRisk = null;
+let expandedCards = new Set();
+
+function countForScope(scopeId) {
+  if (scopeId === "all") return questions.length;
+  return questions.filter(q => q.scopes.includes(scopeId)).length;
+}
+
+function renderSidebar() {
+  const list = document.getElementById("scope-list");
+  list.innerHTML = scopes.map(s => `
+    <button class="scope-btn ${activeScope === s.id ? 'active' : ''}" onclick="setScope('${s.id}')">
+      <span class="scope-emoji">${s.emoji}</span>
+      <div class="scope-info">
+        <span class="scope-name">${s.label}</span>
+        <span class="scope-desc">${s.desc}</span>
+      </div>
+      <span class="scope-count">${countForScope(s.id)}</span>
+    </button>
+  `).join('');
+
+  const legend = document.getElementById("risk-legend");
+  legend.innerHTML = allRisks.map(r => `
+    <div class="risk-dot ${activeRisk === r ? 'active-risk' : ''}" onclick="toggleRisk('${r.replace(/'/g,"\\'")}')">
+      <div class="risk-dot-circle" style="background:${riskColorMap[r]}"></div>
+      ${r}
+    </div>
+  `).join('');
+}
+
+function setScope(id) {
+  activeScope = id;
+  expandedCards.clear();
+  renderSidebar();
+  renderQuestions();
+}
+
+function toggleRisk(risk) {
+  activeRisk = activeRisk === risk ? null : risk;
+  expandedCards.clear();
+  renderSidebar();
+  renderQuestions();
+}
+
+function toggleCard(id) {
+  if (expandedCards.has(id)) expandedCards.delete(id);
+  else expandedCards.add(id);
+  const card = document.getElementById('card-' + id);
+  if (!card) return;
+  card.classList.toggle('expanded', expandedCards.has(id));
+  const btn = card.querySelector('.q-expand-btn');
+  if (btn) btn.classList.toggle('open', expandedCards.has(id));
+}
+
+function renderQuestions() {
+  const search = document.getElementById("search-input").value.toLowerCase().trim();
+  let filtered = activeScope === "all" ? questions : questions.filter(q => q.scopes.includes(activeScope));
+  if (activeRisk) filtered = filtered.filter(q => q.risks.includes(activeRisk));
+  if (search) filtered = filtered.filter(q =>
+    q.text.toLowerCase().includes(search) ||
+    q.section.toLowerCase().includes(search) ||
+    q.risks.join(' ').toLowerCase().includes(search)
+  );
+
+  const area = document.getElementById("q-area");
+  const statusCount = document.getElementById("status-count");
+
+  if (filtered.length === 0) {
+    area.innerHTML = `<div class="empty"><div class="empty-icon">◎</div><div class="empty-msg">No questions match this filter</div><div class="empty-hint">Try adjusting the scope or search term</div></div>`;
+    statusCount.innerHTML = `<strong>0</strong> questions`;
+    return;
+  }
+
+  const grouped = {};
+  filtered.forEach(q => {
+    if (!grouped[q.section]) grouped[q.section] = [];
+    grouped[q.section].push(q);
+  });
+
+  statusCount.innerHTML = `<strong>${filtered.length}</strong> question${filtered.length !== 1 ? 's' : ''} · ${Object.keys(grouped).length} section${Object.keys(grouped).length !== 1 ? 's' : ''}`;
+
+  let globalIdx = 0;
+  let html = '';
+  for (const [section, qs] of Object.entries(grouped)) {
+    const parts = section.match(/^(\d+\.\d+)\s+(.+)$/);
+    const num = parts ? parts[1] : '';
+    const name = parts ? parts[2] : section;
+    html += `
+      <div class="section-header">
+        ${num ? `<span class="section-num">${num}</span>` : ''}
+        <span class="section-name">${name}</span>
+        <div class="section-line"></div>
+      </div>`;
+
+    qs.forEach(q => {
+      const id = globalIdx++;
+      const isExpanded = expandedCards.has(id);
+      const scopeLabels = q.scopes.map(sid => {
+        const s = scopes.find(x => x.id === sid);
+        return s ? `<span class="scope-pill">${s.emoji} ${s.label}</span>` : '';
+      }).join('');
+      const riskPills = q.risks.map(r => {
+        const col = riskColorMap[r] || '#888';
+        return `<span class="risk-pill" style="color:${col};background:${col}1A;border-color:${col}44">${r}</span>`;
+      }).join('');
+
+      html += `
+        <div class="q-card ${isExpanded ? 'expanded' : ''}" id="card-${id}">
+          <div class="q-card-top">
+            <div class="q-meta">${scopeLabels}${riskPills}</div>
+            <div class="q-text">${q.text}</div>
+          </div>
+          <button class="q-expand-btn ${isExpanded ? 'open' : ''}" onclick="toggleCard(${id})">
+            <svg class="chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            ${isExpanded ? 'Hide details' : 'Show objective & evidence'}
+          </button>
+          <div class="q-card-bottom">
+            <div class="q-detail">
+              <div class="q-detail-label">
+                <div class="q-detail-label-dot" style="background:#2B5BE0"></div>
+                Objective
+              </div>
+              <div class="q-detail-text">${q.objective}</div>
+            </div>
+            <div class="q-detail">
+              <div class="q-detail-label">
+                <div class="q-detail-label-dot" style="background:#D97A12"></div>
+                What to expect
+              </div>
+              <div class="q-detail-text">${q.expects}</div>
+            </div>
+          </div>
+        </div>`;
+    });
+  }
+  area.innerHTML = html;
+}
+
+renderSidebar();
+renderQuestions();
+</script>
+</body>
+</html>
